@@ -7,18 +7,16 @@ class UserAuthenticator
   end
 
   def perform_authentication
-    if github_token.try(:error).present?
-      raise AuthenticationError
-    else
-      user_client = Octokit::Client.new(
-        access_token: github_token
-      )
+    raise AuthenticationError if oauth_code.blank?
+    raise AuthenticationError if github_token.try(:error).present?
+    user_client = Octokit::Client.new(
+      access_token: github_token
+    )
 
-      # Filtering all the unnecessary data returned by GITHUB API
-      user_data = user_client.user.to_h.slice(:login, :avatar_url, :url, :name)
-      @user = check_user_existence(user_data)
-      @access_token = check_token_existence()
-    end
+    # Filtering all the unnecessary data returned by GITHUB API
+    user_data = user_client.user.to_h.slice(:login, :avatar_url, :url, :name)
+    @user = check_user_existence(user_data)
+    @access_token = check_token_existence() 
   end
 
   def check_user_existence(user_data)
