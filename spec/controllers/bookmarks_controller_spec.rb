@@ -3,7 +3,7 @@ require 'rails_helper'
 RSpec.describe BookmarksController, type: :controller do
   describe "#index tests" do
     # Query our GET endpoint 'GET /bookmarks'
-    subject { get :index } 
+    subject { get :index }
 
     it 'should return a success response' do
       subject
