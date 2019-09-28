@@ -45,4 +45,86 @@ RSpec.describe BookmarksController, type: :controller do
       )
     end
   end
+
+  describe "#create tests" do
+    subject { post :create }
+
+    context "when user doesnt provide access_token" do
+      it_behaves_like "forbidden_requests"
+    end
+
+    context "when user is unauthorized" do
+      before { request.headers['authorization'] = 'Invalid token' }
+
+      it_behaves_like "forbidden_requests"  
+    end
+
+    context "when user is authorized" do
+      let(:user) { FactoryBot.create :user }
+      let(:access_token) { user.create_access_token }
+
+      before { request.headers['authorization'] = "Bearer #{access_token.token}" }
+
+      context "when invalid params are passed" do
+        let(:invalid_params) do
+          {
+            data: {
+              attributes: {
+                url: '',
+              }
+            }
+          }
+        end
+
+        let(:bookmark_create_error) do
+          {
+            "source" => { "pointer" => "/data/attributes/url" },
+            "detail" => "can't be blank"
+          }
+        end
+
+        subject { post :create, params: invalid_params }
+
+        it "should return 422 status code" do
+          subject
+  
+          expect(response).to have_http_status(:unprocessable_entity)
+        end
+        
+        it "should return the proper json error" do
+          subject
+  
+          expect(json['errors']).to include(bookmark_create_error)
+        end
+      end
+
+      context "when valid params are passed back" do
+        let(:valid_params) do
+          {
+            'data' => {
+              'attributes' => {
+                'url' => 'https://google.com'
+              }
+            }
+          }
+        end
+
+        subject { post :create, params: valid_params }
+
+        it "should respond with 201 status code" do
+          subject
+          expect(response).to have_http_status(:created)
+        end
+
+        it "should return proper json body" do
+          subject
+          expect(json_response['attributes']).to include(valid_params['data']['attributes'])
+        end
+
+        it "should create the bookmark" do
+          expect{subject}.to change{Bookmark.count}.by(1)
+        end
+      end
+    end
+  end
 end
